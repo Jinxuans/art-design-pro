@@ -209,10 +209,10 @@
       }
 
       await fetchRegister(params)
-      ElMessage.success('Register success')
+      ElMessage.success('注册成功')
       toLogin()
     } catch (error) {
-      console.error('Register failed:', error)
+      console.error('注册失败:', error)
     } finally {
       loading.value = false
     }

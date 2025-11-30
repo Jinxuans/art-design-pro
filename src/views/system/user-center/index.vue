@@ -181,32 +181,25 @@
 
   const rules = reactive<FormRules>({
     realName: [
-      { required: true, message: 'Please enter your name', trigger: 'blur' },
-      { min: 2, max: 50, message: 'Length 2 to 50 characters', trigger: 'blur' }
+      { required: true, message: '请输入姓名', trigger: 'blur' },
+      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
     ],
     nikeName: [
-      { required: true, message: 'Please enter a nickname', trigger: 'blur' },
-      { min: 2, max: 50, message: 'Length 2 to 50 characters', trigger: 'blur' }
+      { required: true, message: '请输入昵称', trigger: 'blur' },
+      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
     ],
-    email: [{ required: true, message: 'Please enter email', trigger: 'blur' }],
-    mobile: [{ required: true, message: 'Please enter mobile number', trigger: 'blur' }],
-    address: [{ required: true, message: 'Please enter address', trigger: 'blur' }],
-    sex: [{ required: true, message: 'Please choose gender', trigger: 'change' }]
+    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
+    mobile: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
+    address: [{ required: true, message: '请输入地址', trigger: 'blur' }],
+    sex: [{ required: true, message: '请选择性别', trigger: 'change' }]
   })
 
   const options = [
-    { value: 1, label: 'Male' },
-    { value: 0, label: 'Female' }
+    { value: 1, label: '男' },
+    { value: 0, label: '女' }
   ]
 
-  const lableList: Array<string> = [
-    'Design lover',
-    'Idea maker',
-    'Enjoy spicy',
-    'Long legs',
-    'Optimistic',
-    'Inclusive'
-  ]
+  const lableList: Array<string> = ['专注设计', '很有想法', '辣~', '大长腿', '川妹子', '海纳百川']
 
   onMounted(() => {
     getDate()
@@ -218,7 +211,7 @@
       const profile = await fetchCurrentUserProfile()
       fillForm(profile)
     } catch (error) {
-      console.error('Load profile failed:', error)
+      console.error('加载资料失败:', error)
       fillForm(userInfo.value as any)
     }
   }
@@ -235,12 +228,12 @@
   const getDate = () => {
     const h = new Date().getHours()
 
-    if (h >= 6 && h < 9) date.value = 'Good morning'
-    else if (h >= 9 && h < 11) date.value = 'Morning'
-    else if (h >= 11 && h < 13) date.value = 'Noon'
-    else if (h >= 13 && h < 18) date.value = 'Afternoon'
-    else if (h >= 18 && h < 24) date.value = 'Evening'
-    else date.value = 'It is late, have a rest'
+    if (h >= 6 && h < 9) date.value = '早上好'
+    else if (h >= 9 && h < 11) date.value = '上午好'
+    else if (h >= 11 && h < 13) date.value = '中午好'
+    else if (h >= 13 && h < 18) date.value = '下午好'
+    else if (h >= 18 && h < 24) date.value = '晚上好'
+    else date.value = '很晚了，早点睡'
   }
 
   const edit = async () => {
@@ -265,7 +258,7 @@
     await updateUserProfile(payload)
     const latest = await fetchGetUserInfo()
     userStore.setUserInfo(latest)
-    ElMessage.success('Profile updated')
+    ElMessage.success('资料更新成功')
     isEdit.value = false
   }
 
