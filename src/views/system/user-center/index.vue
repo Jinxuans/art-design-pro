@@ -147,8 +147,11 @@
 </template>
 
 <script setup lang="ts">
+  import { computed, onMounted, reactive, ref } from 'vue'
+  import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+  import { fetchCurrentUserProfile, updateUserProfile } from '@/api/user'
+  import { fetchGetUserInfo } from '@/api/auth'
   import { useUserStore } from '@/store/modules/user'
-  import type { FormInstance, FormRules } from 'element-plus'
 
   defineOptions({ name: 'UserCenter' })
 
@@ -160,87 +163,112 @@
   const date = ref('')
   const ruleFormRef = ref<FormInstance>()
 
-  /**
-   * 用户信息表单
-   */
   const form = reactive({
-    realName: 'John Snow',
-    nikeName: '皮卡丘',
-    email: '59301283@mall.com',
-    mobile: '18888888888',
-    address: '广东省深圳市宝安区西乡街道101栋201',
-    sex: '2',
-    des: 'Art Design Pro 是一款兼具设计美学与高效开发的后台系统.'
+    realName: '',
+    nikeName: '',
+    email: '',
+    mobile: '',
+    address: '',
+    sex: '' as '' | number,
+    des: ''
   })
 
-  /**
-   * 密码修改表单
-   */
   const pwdForm = reactive({
-    password: '123456',
-    newPassword: '123456',
-    confirmPassword: '123456'
+    password: '',
+    newPassword: '',
+    confirmPassword: ''
   })
 
-  /**
-   * 表单验证规则
-   */
   const rules = reactive<FormRules>({
     realName: [
-      { required: true, message: '请输入姓名', trigger: 'blur' },
-      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+      { required: true, message: 'Please enter your name', trigger: 'blur' },
+      { min: 2, max: 50, message: 'Length 2 to 50 characters', trigger: 'blur' }
     ],
     nikeName: [
-      { required: true, message: '请输入昵称', trigger: 'blur' },
-      { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+      { required: true, message: 'Please enter a nickname', trigger: 'blur' },
+      { min: 2, max: 50, message: 'Length 2 to 50 characters', trigger: 'blur' }
     ],
-    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }],
-    mobile: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
-    address: [{ required: true, message: '请输入地址', trigger: 'blur' }],
-    sex: [{ required: true, message: '请选择性别', trigger: 'blur' }]
+    email: [{ required: true, message: 'Please enter email', trigger: 'blur' }],
+    mobile: [{ required: true, message: 'Please enter mobile number', trigger: 'blur' }],
+    address: [{ required: true, message: 'Please enter address', trigger: 'blur' }],
+    sex: [{ required: true, message: 'Please choose gender', trigger: 'change' }]
   })
 
-  /**
-   * 性别选项
-   */
   const options = [
-    { value: '1', label: '男' },
-    { value: '2', label: '女' }
+    { value: 1, label: 'Male' },
+    { value: 0, label: 'Female' }
   ]
 
-  /**
-   * 用户标签列表
-   */
-  const lableList: Array<string> = ['专注设计', '很有想法', '辣~', '大长腿', '川妹子', '海纳百川']
+  const lableList: Array<string> = [
+    'Design lover',
+    'Idea maker',
+    'Enjoy spicy',
+    'Long legs',
+    'Optimistic',
+    'Inclusive'
+  ]
 
   onMounted(() => {
     getDate()
+    loadProfile()
   })
 
-  /**
-   * 根据当前时间获取问候语
-   */
+  const loadProfile = async () => {
+    try {
+      const profile = await fetchCurrentUserProfile()
+      fillForm(profile)
+    } catch (error) {
+      console.error('Load profile failed:', error)
+      fillForm(userInfo.value as any)
+    }
+  }
+
+  const fillForm = (profile?: Partial<Api.Auth.ProfileDetail>) => {
+    form.realName = profile?.name || profile?.userName || ''
+    form.nikeName = profile?.nickname || profile?.userName || ''
+    form.email = profile?.email || ''
+    form.mobile = (profile as any)?.mobile || ''
+    form.address = (profile as any)?.localAddress || ''
+    form.sex = typeof profile?.sex === 'number' ? profile.sex : ''
+  }
+
   const getDate = () => {
     const h = new Date().getHours()
 
-    if (h >= 6 && h < 9) date.value = '早上好'
-    else if (h >= 9 && h < 11) date.value = '上午好'
-    else if (h >= 11 && h < 13) date.value = '中午好'
-    else if (h >= 13 && h < 18) date.value = '下午好'
-    else if (h >= 18 && h < 24) date.value = '晚上好'
-    else date.value = '很晚了，早点睡'
+    if (h >= 6 && h < 9) date.value = 'Good morning'
+    else if (h >= 9 && h < 11) date.value = 'Morning'
+    else if (h >= 11 && h < 13) date.value = 'Noon'
+    else if (h >= 13 && h < 18) date.value = 'Afternoon'
+    else if (h >= 18 && h < 24) date.value = 'Evening'
+    else date.value = 'It is late, have a rest'
   }
 
-  /**
-   * 切换用户信息编辑状态
-   */
-  const edit = () => {
-    isEdit.value = !isEdit.value
+  const edit = async () => {
+    if (!isEdit.value) {
+      isEdit.value = true
+      return
+    }
+
+    if (!ruleFormRef.value) return
+
+    await ruleFormRef.value.validate()
+
+    const payload: Api.Auth.ProfilePayload = {
+      name: form.realName || undefined,
+      nickname: form.nikeName || undefined,
+      email: form.email || undefined,
+      mobile: form.mobile || undefined,
+      localAddress: form.address || undefined,
+      sex: form.sex === '' ? undefined : Number(form.sex)
+    }
+
+    await updateUserProfile(payload)
+    const latest = await fetchGetUserInfo()
+    userStore.setUserInfo(latest)
+    ElMessage.success('Profile updated')
+    isEdit.value = false
   }
 
-  /**
-   * 切换密码编辑状态
-   */
   const editPwd = () => {
     isEditPwd.value = !isEditPwd.value
   }
