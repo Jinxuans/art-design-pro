@@ -112,7 +112,7 @@
   import { useUserStore } from '@/store/modules/user'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
-  import { fetchLogin } from '@/api/auth'
+  import { fetchLogin, fetchGetUserInfo } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
 
@@ -232,6 +232,9 @@
       // 存储 token 和登录状态
       userStore.setToken(token, refreshToken)
       userStore.setLoginStatus(true)
+      const userInfo = await fetchGetUserInfo()
+      userStore.setUserInfo(userInfo)
+      userStore.checkAndClearWorktabs()
 
       // 登录成功处理
       showLoginSuccessNotice()
