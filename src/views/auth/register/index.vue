@@ -49,6 +49,26 @@
               />
             </ElFormItem>
 
+            <ElFormItem prop="captcha">
+              <div class="flex items-center gap-3">
+                <ElInput
+                  class="custom-height flex-1"
+                  v-model.trim="formData.captcha"
+                  :placeholder="$t('register.placeholder.captcha') || '请输入验证码'"
+                  maxlength="4"
+                />
+                <div class="cursor-pointer select-none" @click="loadCaptcha">
+                  <img
+                    v-if="captchaImg"
+                    :src="captchaImg"
+                    alt="captcha"
+                    class="h-10 rounded border border-gray-200"
+                  />
+                  <span v-else class="text-sm text-gray-400">加载中</span>
+                </div>
+              </div>
+            </ElFormItem>
+
             <ElFormItem prop="agreement">
               <ElCheckbox v-model="formData.agreement">
                 {{ $t('register.agreeText') }}
@@ -89,6 +109,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { fetchRegister } from '@/api/auth'
+  import { fetchCaptcha } from '@/api/captcha'
 
   defineOptions({ name: 'Register' })
 
@@ -96,6 +117,8 @@
     username: string
     password: string
     confirmPassword: string
+    captcha: string
+    captchaId?: string
     agreement: boolean
   }
 
@@ -120,8 +143,11 @@
     username: '',
     password: '',
     confirmPassword: '',
+    captcha: '',
+    captchaId: '',
     agreement: false
   })
+  const captchaImg = ref('')
 
   /**
    * 验证密码
@@ -174,6 +200,16 @@
     callback()
   }
 
+  const loadCaptcha = async () => {
+    try {
+      const res = await fetchCaptcha()
+      formData.captchaId = res._id
+      captchaImg.value = res.base64 || res.svg
+    } catch (error) {
+      console.error('获取验证码失败', error)
+    }
+  }
+
   const rules = computed<FormRules<RegisterForm>>(() => ({
     username: [
       { required: true, message: t('register.placeholder.username'), trigger: 'blur' },
@@ -189,6 +225,7 @@
       { min: PASSWORD_MIN_LENGTH, message: t('register.rule.passwordLength'), trigger: 'blur' }
     ],
     confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }],
+    captcha: [{ required: true, message: t('register.placeholder.captcha') || '请输入验证码', trigger: 'blur' }],
     agreement: [{ validator: validateAgreement, trigger: 'change' }]
   }))
 
@@ -205,7 +242,9 @@
 
       const params: Api.Auth.RegisterParams = {
         userName: formData.username,
-        password: formData.password
+        password: formData.password,
+        captcha: formData.captcha,
+        captchaId: formData.captchaId
       }
 
       await fetchRegister(params)
@@ -223,6 +262,10 @@
       router.push({ name: 'Login' })
     }, REDIRECT_DELAY)
   }
+
+  onMounted(() => {
+    loadCaptcha()
+  })
 </script>
 
 <style scoped>

@@ -37,16 +37,37 @@
                 v-model.trim="formData.username"
               />
             </ElFormItem>
-            <ElFormItem prop="password">
+          <ElFormItem prop="password">
+            <ElInput
+              class="custom-height"
+              :placeholder="$t('login.placeholder.password')"
+              v-model.trim="formData.password"
+              type="password"
+              autocomplete="off"
+              show-password
+            />
+          </ElFormItem>
+
+          <!-- 图片验证码 -->
+          <ElFormItem prop="captcha">
+            <div class="flex items-center gap-3">
               <ElInput
-                class="custom-height"
-                :placeholder="$t('login.placeholder.password')"
-                v-model.trim="formData.password"
-                type="password"
-                autocomplete="off"
-                show-password
+                class="custom-height flex-1"
+                :placeholder="$t('login.placeholder.captcha') || '请输入验证码'"
+                v-model.trim="formData.captcha"
+                maxlength="4"
               />
-            </ElFormItem>
+              <div class="cursor-pointer select-none" @click="loadCaptcha">
+                <img
+                  v-if="captchaImg"
+                  :src="captchaImg"
+                  alt="captcha"
+                  class="h-10 rounded border border-gray-200"
+                />
+                <span v-else class="text-sm text-gray-400">加载中</span>
+              </div>
+            </div>
+          </ElFormItem>
 
             <!-- 推拽验证 -->
             <div class="relative pb-5 mt-6">
@@ -113,6 +134,7 @@
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin, fetchGetUserInfo } from '@/api/auth'
+  import { fetchCaptcha } from '@/api/captcha'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
 
@@ -177,19 +199,34 @@
     account: '',
     username: '',
     password: '',
+    captcha: '',
     rememberPassword: true
   })
 
   const rules = computed<FormRules>(() => ({
     username: [{ required: true, message: t('login.placeholder.username'), trigger: 'blur' }],
-    password: [{ required: true, message: t('login.placeholder.password'), trigger: 'blur' }]
+    password: [{ required: true, message: t('login.placeholder.password'), trigger: 'blur' }],
+    captcha: [{ required: true, message: t('login.placeholder.captcha') || '请输入验证码', trigger: 'blur' }]
   }))
 
   const loading = ref(false)
+  const captchaImg = ref('')
+  const captchaId = ref('')
 
   onMounted(() => {
     setupAccount('super')
+    loadCaptcha()
   })
+
+  const loadCaptcha = async () => {
+    try {
+      const res = await fetchCaptcha()
+      captchaId.value = res._id
+      captchaImg.value = res.base64 || res.svg
+    } catch (error) {
+      console.error('获取验证码失败', error)
+    }
+  }
 
   // 设置账号
   const setupAccount = (key: AccountKey) => {
@@ -217,11 +254,13 @@
       loading.value = true
 
       // 登录请求
-      const { username, password } = formData
+      const { username, password, captcha } = formData
 
       const { token, refreshToken } = await fetchLogin({
         userName: username,
-        password
+        password,
+        captcha,
+        captchaId: captchaId.value
       })
 
       // 验证token
@@ -254,6 +293,7 @@
     } finally {
       loading.value = false
       resetDragVerify()
+      loadCaptcha()
     }
   }
 
