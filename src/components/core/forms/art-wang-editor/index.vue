@@ -24,6 +24,7 @@
   import { useUserStore } from '@/store/modules/user'
   import EmojiText from '@/utils/ui/emojo'
   import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'
+  import { getApiOrigin } from '@/utils/env'
 
   defineOptions({ name: 'ArtWangEditor' })
 
@@ -70,10 +71,12 @@
     allowedFileTypes: ['image/*']
   } as const
 
+  const apiOrigin = getApiOrigin()
+
   // 计算属性：上传服务器地址
   const uploadServer = computed(
     () =>
-      props.uploadConfig?.server || `${import.meta.env.VITE_API_URL}/api/common/upload/wangeditor`
+      props.uploadConfig?.server || `${apiOrigin}/api/common/upload/wangeditor`
   )
 
   // 合并上传配置

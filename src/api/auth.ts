@@ -7,7 +7,7 @@ import request from '@/utils/http'
  */
 export function fetchLogin(params: Api.Auth.LoginParams) {
   return request.post<Api.Auth.LoginResponse>({
-    url: '/api/auth/login',
+    url: '/userAuths/login',
     params
     // showSuccessMessage: true // 显示成功消息
     // showErrorMessage: false // 不显示错误消息
@@ -16,7 +16,7 @@ export function fetchLogin(params: Api.Auth.LoginParams) {
 
 export function fetchRegister(params: Api.Auth.RegisterParams) {
   return request.post<Api.Auth.RegisterResponse>({
-    url: '/api/auth/register',
+    url: '/userAuths/register',
     params,
     showSuccessMessage: true
   })
@@ -28,7 +28,7 @@ export function fetchRegister(params: Api.Auth.RegisterParams) {
  */
 export function fetchGetUserInfo() {
   return request.get<Api.Auth.UserInfo>({
-    url: '/api/user/info'
+    url: '/user/info'
     // 自定义请求头
     // headers: {
     //   'X-Custom-Header': 'your-custom-value'

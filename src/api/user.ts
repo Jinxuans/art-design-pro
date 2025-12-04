@@ -5,7 +5,7 @@ import request from '@/utils/http'
  */
 export function fetchCurrentUserProfile() {
   return request.get<Api.Auth.ProfileDetail>({
-    url: '/api/user/info'
+    url: '/user/info'
   })
 }
 
@@ -14,7 +14,7 @@ export function fetchCurrentUserProfile() {
  */
 export function updateUserProfile(params: Api.Auth.ProfilePayload) {
   return request.put<void>({
-    url: '/api/v1/user/changeUserInfo',
+    url: '/user/changeUserInfo',
     params,
     showSuccessMessage: true
   })
