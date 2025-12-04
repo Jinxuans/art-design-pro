@@ -9,6 +9,6 @@ export interface CaptchaResponse {
 /** 获取图片验证码（svg） */
 export function fetchCaptcha() {
   return request.post<CaptchaResponse>({
-    url: '/api/v1/sysCaptcha/createCaptcha'
+    url: '/sysCaptcha/createCaptcha'
   })
 }

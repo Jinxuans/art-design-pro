@@ -4,7 +4,7 @@ import { AppRouteRecord } from '@/types/router'
 // 获取用户列表
 export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   return request.get<Api.SystemManage.UserList>({
-    url: '/api/user/list',
+    url: '/user/list',
     params
   })
 }
@@ -12,7 +12,7 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
 // 获取角色列表
 export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
   return request.get<Api.SystemManage.RoleList>({
-    url: '/api/role/list',
+    url: '/userRole',
     params
   })
 }
@@ -20,21 +20,21 @@ export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
 // 获取菜单列表
 export function fetchGetMenuList() {
   return request.get<AppRouteRecord[]>({
-    url: '/api/v1/system/menus'
+    url: '/system/menus'
   })
 }
 
 // 菜单树（含按钮），用于后台管理
 export function fetchSysMenuTree() {
   return request.get<any[]>({
-    url: '/api/v1/sysMenu/findTree'
+    url: '/sysMenu/findTree'
   })
 }
 
 // 新增菜单/按钮
 export function createSysMenu(params: Record<string, any>) {
   return request.post<void>({
-    url: '/api/v1/sysMenu',
+    url: '/sysMenu',
     params,
     showSuccessMessage: true
   })
@@ -43,7 +43,7 @@ export function createSysMenu(params: Record<string, any>) {
 // 更新菜单/按钮
 export function updateSysMenu(id: string, params: Record<string, any>) {
   return request.put<void>({
-    url: `/api/v1/sysMenu/${id}`,
+    url: `/sysMenu/${id}`,
     params,
     showSuccessMessage: true
   })
@@ -52,7 +52,7 @@ export function updateSysMenu(id: string, params: Record<string, any>) {
 // 删除菜单/按钮
 export function deleteSysMenu(id: string) {
   return request.del<void>({
-    url: `/api/v1/sysMenu/${id}`,
+    url: `/sysMenu/${id}`,
     showSuccessMessage: true
   })
 }
