@@ -68,6 +68,19 @@ declare namespace Api {
       password: string
     }
 
+    /** 注册参数 */
+    interface RegisterParams {
+      userName: string
+      password: string
+      captchaId?: string
+      captcha?: string
+    }
+
+    /** 注册响应 */
+    interface RegisterResponse {
+      msg: string
+    }
+
     /** 登录响应 */
     interface LoginResponse {
       token: string
@@ -78,10 +91,30 @@ declare namespace Api {
     interface UserInfo {
       buttons: string[]
       roles: string[]
-      userId: number
+      userId: string
       userName: string
       email: string
       avatar?: string
+    }
+
+    /** 个人资料（用于个人中心编辑） */
+    interface ProfilePayload {
+      name?: string
+      nickname?: string
+      mobile?: string
+      email?: string
+      localAddress?: string
+      sex?: number
+      avatar?: string
+    }
+
+    /** 个人资料详情（接口返回） */
+    interface ProfileDetail extends ProfilePayload {
+      userId?: string
+      userName?: string
+      account?: string
+      roles?: string[]
+      buttons?: string[]
     }
   }
 

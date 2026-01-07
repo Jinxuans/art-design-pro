@@ -38,9 +38,9 @@
 
 <script setup lang="ts">
   import type { FormRules } from 'element-plus'
-  import { ElIcon, ElTooltip } from 'element-plus'
+  import { ElIcon, ElTooltip, ElMessage } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
   import { QuestionFilled } from '@element-plus/icons-vue'
-  import { formatMenuTitle } from '@/utils/router'
   import type { AppRouteRecord } from '@/types/router'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import ArtForm from '@/components/core/forms/art-form/index.vue'
@@ -101,23 +101,28 @@
     editData?: AppRouteRecord | any
     type?: 'menu' | 'button'
     lockType?: boolean
+    parentPath?: string
   }
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
-    (e: 'submit', data: MenuFormData): void
+    (e: 'submit', data: { form: MenuFormData & { menuType: 'menu' | 'button' }; isEdit: boolean; id?: string; parentPath?: string }): void
   }
 
   const props = withDefaults(defineProps<Props>(), {
     visible: false,
     type: 'menu',
-    lockType: false
+    lockType: false,
+    parentPath: ''
   })
 
   const emit = defineEmits<Emits>()
 
   const formRef = ref()
   const isEdit = ref(false)
+  const currentParentPath = ref('')
+  const titleKey = ref('')
+  const { t } = useI18n()
 
   const form = reactive<MenuFormData & { menuType: 'menu' | 'button' }>({
     menuType: 'menu',
@@ -128,7 +133,7 @@
     component: '',
     icon: '',
     isEnable: true,
-    sort: 1,
+    sort: 0,
     isMenu: true,
     keepAlive: true,
     isHide: false,
@@ -144,8 +149,73 @@
     authName: '',
     authLabel: '',
     authIcon: '',
-    authSort: 1
+    authSort: 0
   })
+
+  const resetForm = () => {
+    Object.assign(form, {
+      menuType: props.type || 'menu',
+      id: 0,
+      name: '',
+      path: '',
+      label: '',
+      component: '',
+      icon: '',
+      isEnable: true,
+      sort: 1,
+      isMenu: true,
+      keepAlive: true,
+      isHide: false,
+      isHideTab: false,
+      link: '',
+      isIframe: false,
+      showBadge: false,
+      showTextBadge: '',
+      fixedTab: false,
+      activePath: '',
+      roles: [],
+      isFullPage: false,
+      authName: '',
+      authLabel: '',
+      authIcon: '',
+      authSort: 1
+    })
+    currentParentPath.value = props.parentPath || ''
+    titleKey.value = ''
+  }
+
+  const fillFormByEditData = (data: any) => {
+    if (!data) return
+    form.menuType = data.menuType === 'button' || data.meta?.isAuthButton ? 'button' : 'menu'
+    form.id = data.id
+    // 展示名：meta.title；权限标识：name / btnPower
+    titleKey.value = data.meta?.title || ''
+    const translated = titleKey.value ? t(titleKey.value) : ''
+    form.name = translated && translated !== titleKey.value ? translated : titleKey.value
+    form.path = data.path || ''
+    form.component = data.component || ''
+    form.icon = data.meta?.icon || ''
+    form.sort = data.menuSort ?? 0
+    form.keepAlive = Boolean(data.meta?.isKeepAlive || data.meta?.keepAlive)
+    form.isHide = Boolean(data.meta?.isHide)
+    form.isHideTab = Boolean(data.meta?.isHideTab)
+    form.link = data.meta?.link || ''
+    form.isIframe = Boolean(data.meta?.isIframe)
+    form.showBadge = Boolean(data.meta?.showBadge)
+    form.showTextBadge = data.meta?.showTextBadge || ''
+    form.fixedTab = Boolean(data.meta?.fixedTab)
+    form.activePath = data.meta?.activePath || ''
+    form.roles = data.meta?.roles || []
+    form.isFullPage = Boolean(data.meta?.isFullPage)
+    form.label = data.name || data.meta?.authMark || ''
+
+    // 按钮专用
+    titleKey.value = data.meta?.title || ''
+    const translatedBtn = titleKey.value ? t(titleKey.value) : ''
+    form.authName = translatedBtn && translatedBtn !== titleKey.value ? translatedBtn : titleKey.value || data.name || ''
+    form.authLabel = data.btnPower || data.name || data.meta?.authMark || ''
+    form.authSort = data.menuSort ?? 0
+  }
 
   const rules = reactive<FormRules>({
     name: [
@@ -157,6 +227,23 @@
     authName: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
     authLabel: [{ required: true, message: '请输入权限标识', trigger: 'blur' }]
   })
+
+  watch(
+    () => props.visible,
+    (visible) => {
+      if (visible) {
+        resetForm()
+        isEdit.value = Boolean(props.editData)
+        currentParentPath.value =
+          props.parentPath ||
+          props.editData?.meta?.parentPath ||
+          props.editData?.menuSuperior?.slice(-1)[0] ||
+          ''
+        fillFormByEditData(props.editData)
+        nextTick(() => formRef.value?.ref?.clearValidate?.())
+      }
+    }
+  )
 
   /**
    * 表单项配置
@@ -204,7 +291,7 @@
           label: '菜单排序',
           key: 'sort',
           type: 'number',
-          props: { min: 1, controlsPosition: 'right', style: { width: '100%' } }
+          props: { min: 0, controlsPosition: 'right', style: { width: '100%' } }
         },
         {
           label: '外部链接',
@@ -255,7 +342,7 @@
           label: '权限排序',
           key: 'authSort',
           type: 'number',
-          props: { min: 1, controlsPosition: 'right', style: { width: '100%' } }
+          props: { min: 0, controlsPosition: 'right', style: { width: '100%' } }
         }
       ]
     }
@@ -275,52 +362,32 @@
     return false
   })
 
-  /**
-   * 重置表单数据
-   */
-  const resetForm = (): void => {
-    formRef.value?.reset()
-    form.menuType = 'menu'
-  }
-
-  /**
-   * 加载表单数据（编辑模式）
-   */
-  const loadFormData = (): void => {
-    if (!props.editData) return
-
-    isEdit.value = true
-
-    if (form.menuType === 'menu') {
-      const row = props.editData
-      form.id = row.id || 0
-      form.name = formatMenuTitle(row.meta?.title || '')
-      form.path = row.path || ''
-      form.label = row.name || ''
-      form.component = row.component || ''
-      form.icon = row.meta?.icon || ''
-      form.sort = row.meta?.sort || 1
-      form.isMenu = row.meta?.isMenu ?? true
-      form.keepAlive = row.meta?.keepAlive ?? false
-      form.isHide = row.meta?.isHide ?? false
-      form.isHideTab = row.meta?.isHideTab ?? false
-      form.isEnable = row.meta?.isEnable ?? true
-      form.link = row.meta?.link || ''
-      form.isIframe = row.meta?.isIframe ?? false
-      form.showBadge = row.meta?.showBadge ?? false
-      form.showTextBadge = row.meta?.showTextBadge || ''
-      form.fixedTab = row.meta?.fixedTab ?? false
-      form.activePath = row.meta?.activePath || ''
-      form.roles = row.meta?.roles || []
-      form.isFullPage = row.meta?.isFullPage ?? false
-    } else {
-      const row = props.editData
-      form.authName = row.title || ''
-      form.authLabel = row.authMark || ''
-      form.authIcon = row.icon || ''
-      form.authSort = row.sort || 1
+  watch(
+    () => props.visible,
+    (visible) => {
+      if (visible) {
+        resetForm()
+        isEdit.value = Boolean(props.editData)
+        currentParentPath.value =
+          props.parentPath ||
+          props.editData?.meta?.parentPath ||
+          props.editData?.menuSuperior?.slice(-1)[0] ||
+          ''
+        fillFormByEditData(props.editData)
+        nextTick(() => formRef.value?.ref?.clearValidate?.())
+      }
     }
-  }
+  )
+
+  // 如果用户修改了显示名称，视为不再使用原有 i18n key
+  watch(
+    () => form.name,
+    (val) => {
+      if (titleKey.value && val !== t(titleKey.value)) {
+        titleKey.value = ''
+      }
+    }
+  )
 
   /**
    * 提交表单
@@ -330,7 +397,22 @@
 
     try {
       await formRef.value.validate()
-      emit('submit', { ...form })
+      const isButton = form.menuType === 'button'
+      const displayTitle = isButton ? form.authName : form.name
+      const identifier = isButton ? form.authLabel : form.label || form.name
+      emit('submit', {
+        form: {
+          ...form,
+          // 展示名（meta.title），优先保持原有 i18n key
+          _displayTitle: titleKey.value || displayTitle,
+          _titleKey: titleKey.value,
+          // 权限标识 = name
+          _identifier: identifier
+        },
+        isEdit: isEdit.value,
+        id: props.editData?.id,
+        parentPath: currentParentPath.value
+      })
       ElMessage.success(`${isEdit.value ? '编辑' : '新增'}成功`)
       handleCancel()
     } catch {
@@ -351,34 +433,7 @@
   const handleClosed = (): void => {
     resetForm()
     isEdit.value = false
+    currentParentPath.value = ''
+    titleKey.value = ''
   }
-
-  /**
-   * 监听对话框显示状态
-   */
-  watch(
-    () => props.visible,
-    (newVal) => {
-      if (newVal) {
-        form.menuType = props.type
-        nextTick(() => {
-          if (props.editData) {
-            loadFormData()
-          }
-        })
-      }
-    }
-  )
-
-  /**
-   * 监听菜单类型变化
-   */
-  watch(
-    () => props.type,
-    (newType) => {
-      if (props.visible) {
-        form.menuType = newType
-      }
-    }
-  )
 </script>
